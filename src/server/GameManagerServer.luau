@@ -357,7 +357,22 @@ function GameManagerServer:PlayerEliminated(player, killer)
 	end
 	print("[GameManager] 💀 ========================================")
 	
-	-- Find their placement (how many players are left alive + 1)
+	-- Remove from match player list FIRST (before calculating placement)
+	local removed = false
+	for i, matchPlayer in ipairs(playersInMatch) do
+		if matchPlayer == player then
+			table.remove(playersInMatch, i)
+			removed = true
+			print("[GameManager] ✅ Removed " .. player.DisplayName .. " from match player list")
+			break
+		end
+	end
+	if not removed then
+		warn("[GameManager] ⚠️ Player was not in playersInMatch list")
+	end
+	
+	-- NOW calculate placement (how many players are left alive + 1)
+	-- This gives correct placement: if 1 player left, you're #2. If 0 left, you won (#1)
 	local data = PlayerDataModule:GetPlayerData(player)
 	if data then
 		local playersAlive = 0
@@ -370,7 +385,7 @@ function GameManagerServer:PlayerEliminated(player, killer)
 		data.placement = playersAlive + 1
 		data.isInMatch = false
 		
-		print("[GameManager] 📊 Placement: #" .. data.placement .. " out of " .. #playersInMatch .. " total players")
+		print("[GameManager] 📊 Placement: #" .. data.placement .. " (" .. playersAlive .. " players still alive)")
 		print("[GameManager] ✅ Set isInMatch = false for " .. player.DisplayName)
 	else
 		warn("[GameManager] ⚠️ No player data found for " .. player.DisplayName)
@@ -381,20 +396,6 @@ function GameManagerServer:PlayerEliminated(player, killer)
 	task.wait(2) -- Wait 2 seconds so they can see the death
 	print("[GameManager] 🏠 Teleporting " .. player.DisplayName .. " to lobby...")
 	self:SpawnPlayerInLobby(player)
-	
-	-- Remove from match player list
-	local removed = false
-	for i, matchPlayer in ipairs(playersInMatch) do
-		if matchPlayer == player then
-			table.remove(playersInMatch, i)
-			removed = true
-			print("[GameManager] ✅ Removed from match player list")
-			break
-		end
-	end
-	if not removed then
-		warn("[GameManager] ⚠️ Player was not in playersInMatch list")
-	end
 	
 	local remainingCount = #playersInMatch
 	print("[GameManager] 👥 Players remaining in match: " .. remainingCount)

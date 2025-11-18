@@ -47,7 +47,7 @@ GameConstants.XP_FROM_ELIMINATION = 400  -- Killing a player gives 400 XP
 -- MATCH TIMING
 -- ========================================
 -- How long different parts of the game last
-GameConstants.INTERMISSION_DURATION = 120 -- 2 minutes between matches (in seconds)
+GameConstants.INTERMISSION_DURATION = 10 -- 10 seconds between matches (for testing - change to 120 for production)
 GameConstants.MATCH_DURATION = 345        -- 5 minutes 45 seconds for the match (in seconds)
 
 -- ========================================

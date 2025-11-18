@@ -228,23 +228,42 @@ end)
 -- ========================================
 -- CHARACTER MOVEMENT AND ROTATION
 -- ========================================
--- This handles the actual character movement based on the camera
+-- This handles the actual character movement based on the camera (MOBA-style controls)
+-- The character moves relative to where the camera is looking, and smoothly rotates to face the movement direction
+
 RunService.Heartbeat:Connect(function()
 	if moveDirection.Magnitude > 0.1 then
-		-- Get camera direction (for camera-relative movement)
+		-- Get camera CFrame for camera-relative movement (like MOBA games)
 		local cameraCFrame = camera.CFrame
-		local cameraDiretion = cameraCFrame.LookVector
 		
-		-- Calculate move direction relative to camera
+		-- Calculate move direction relative to camera (W = forward from camera view, S = backward from camera view)
+		-- This makes the controls feel like League of Legends / MOBA games
 		local relativeDirection = (cameraCFrame * CFrame.new(moveDirection.X, 0, moveDirection.Z)).Position - cameraCFrame.Position
+		relativeDirection = Vector3.new(relativeDirection.X, 0, relativeDirection.Z) -- Flatten to ground plane
 		
-		-- Move character
-		humanoid:Move(Vector3.new(relativeDirection.X, 0, relativeDirection.Z))
-		
-		-- Rotate character to face movement direction
-		if relativeDirection.Magnitude > 0.1 then
-			humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position, humanoidRootPart.Position + relativeDirection)
+		-- Only move if we have a valid direction
+		if relativeDirection.Magnitude > 0.01 then
+			-- Normalize the direction so diagonal movement isn't faster
+			local normalizedDirection = relativeDirection.Unit
+			
+			-- Tell the humanoid to walk in this direction
+			-- This uses Roblox's built-in movement system which respects WalkSpeed
+			humanoid:Move(normalizedDirection)
+			
+			-- Smoothly rotate character to face movement direction (not instant snap)
+			-- This makes the character look where they're going without feeling "stuck"
+			local currentLookVector = humanoidRootPart.CFrame.LookVector
+			local targetLookVector = normalizedDirection
+			
+			-- Lerp (smooth blend) between current and target rotation
+			local newLookVector = currentLookVector:Lerp(targetLookVector, 0.25) -- 0.25 = rotation speed
+			
+			-- Apply the new rotation (only affects Y-axis rotation, keeps character upright)
+			humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position, humanoidRootPart.Position + newLookVector)
 		end
+	else
+		-- No input - stop moving
+		humanoid:Move(Vector3.zero)
 	end
 end)
 
