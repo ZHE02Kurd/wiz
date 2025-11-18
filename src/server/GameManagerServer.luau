@@ -21,6 +21,10 @@ local Workspace = game:GetService("Workspace")
 local GameConstants = require(ReplicatedStorage.Shared.Data.GameConstants)
 local PlayerDataModule = require(ReplicatedStorage.Shared.Modules.PlayerDataModule)
 
+-- Server Modules
+local ServerFolder = script.Parent
+local ManaCrystalServer = require(ServerFolder:WaitForChild("ManaCrystalServer"))
+
 -- Remotes
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local UpdateGameStateRemote = Remotes:WaitForChild("UpdateGameStateSC") -- Server to Client
@@ -277,12 +281,18 @@ function GameManagerServer:StartMatch()
 	-- Notify all clients
 	self:BroadcastGameState()
 	
-	print("[GameManager] 🎮 ========================================")
+	-- Spawn Mana Crystals around the arena
+	print("[GameManager] 💎 Spawning Mana Crystals...")
+	local arenaCenter = Vector3.new(0, 5, 0) -- PLACEHOLDER: Get actual arena center
+	ManaCrystalServer:SpawnCrystals(arenaCenter, 50)
+	print("[GameManager] ✅ Mana Crystals spawned")
+	
+	print("[GameManager] 🎮 =========================================")
 	print("[GameManager] 🎮 MATCH STARTED SUCCESSFULLY!")
-	print("[GameManager] 🎮 ========================================")
+	print("[GameManager] 🎮 =========================================")
 	
 	-- TODO: Start storm system
-	-- TODO: Spawn chests and pickups
+	-- TODO: Spawn chests and health orbs
 end
 
 --- Ends the current match
@@ -290,6 +300,11 @@ function GameManagerServer:EndMatch()
 	print("[GameManager] 🏁 ========================================")
 	print("[GameManager] 🏁 ENDING MATCH")
 	print("[GameManager] 🏁 ========================================")
+	
+	-- Clean up match environment
+	print("[GameManager] 🧹 Cleaning up match environment...")
+	ManaCrystalServer:ClearCrystals()
+	print("[GameManager] ✅ Match cleanup complete")
 	
 	-- Calculate placements for remaining players
 	local remainingPlayers = {}

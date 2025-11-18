@@ -11,7 +11,6 @@ This phase is about setting up the "empty rooms" and the rules that connect them
 
 1.  **Initialize Project:**
     * Create the Roblox Place.
-    * Set up the folder structure in `ServerStorage`, `ServerScriptService`, and `ReplicatedStorage` as defined in your coding standards (e.g., `Remotes`, `Modules`, `Client`, `Server`).
     * Implement the `Developer Coding Standards` from the start.
 
 2.  **Create Game States:**

@@ -310,6 +310,26 @@ function PlayerDataModule:RecalculateStats(player)
 		print("[PlayerData] ⚕️ Current health capped: " .. oldHealth .. " → " .. data.maxHealth)
 	end
 	
+	-- 🎯 CRITICAL: Sync movement speed with character's Humanoid
+	-- Update WalkSpeed to match our movement speed stat
+	local character = player.Character
+	if character then
+		local humanoid = character:FindFirstChild("Humanoid")
+		if humanoid then
+			humanoid.WalkSpeed = data.movementSpeed
+			print("[PlayerData] 🤖 Synced Humanoid.WalkSpeed: " .. humanoid.WalkSpeed)
+			
+			-- Also sync current health to Humanoid
+			local humanoidHealth = (data.health / data.maxHealth) * 100
+			humanoid.Health = math.max(humanoidHealth, 0)
+			print("[PlayerData] 🤖 Synced Humanoid.Health: " .. humanoid.Health .. " / 100")
+		else
+			warn("[PlayerData] ⚠️ No Humanoid found for " .. player.DisplayName)
+		end
+	else
+		warn("[PlayerData] ⚠️ No Character found for " .. player.DisplayName)
+	end
+	
 	print("[PlayerData] ✅ Stats recalculation complete")
 end
 
@@ -335,6 +355,25 @@ function PlayerDataModule:ApplyDamage(player, damageAmount, damageSource)
 	-- Apply damage
 	data.health = data.health - finalDamage
 	print("[PlayerData] ❤️ Health changed: " .. math.floor(oldHealth) .. " → " .. math.floor(data.health) .. " (" .. math.floor(data.health) .. " / " .. data.maxHealth .. ")")
+	
+	-- 🎯 CRITICAL: Sync with Roblox character's Humanoid
+	-- PlayerDataModule health is the "source of truth", but Humanoid.Health needs to match
+	-- for Roblox's built-in death system to work
+	local character = player.Character
+	if character then
+		local humanoid = character:FindFirstChild("Humanoid")
+		if humanoid then
+			-- Scale our health (0-1000) to Humanoid health (0-100)
+			-- Humanoid.MaxHealth is always 100 by default in Roblox
+			local humanoidHealth = (data.health / data.maxHealth) * 100
+			humanoid.Health = math.max(humanoidHealth, 0)
+			print("[PlayerData] 🤖 Synced Humanoid.Health: " .. humanoid.Health .. " / 100")
+		else
+			warn("[PlayerData] ⚠️ No Humanoid found for " .. player.DisplayName)
+		end
+	else
+		warn("[PlayerData] ⚠️ No Character found for " .. player.DisplayName)
+	end
 	
 	-- Check if player died
 	if data.health <= 0 then
@@ -380,6 +419,23 @@ function PlayerDataModule:Heal(player, healAmount)
 	
 	if actualHealing < healAmount then
 		print("[PlayerData] ℹ️ Overhealing prevented - capped at max health " .. data.maxHealth)
+	end
+	
+	-- 🎯 CRITICAL: Sync with Roblox character's Humanoid
+	-- Update Humanoid.Health to match our data
+	local character = player.Character
+	if character then
+		local humanoid = character:FindFirstChild("Humanoid")
+		if humanoid then
+			-- Scale our health (0-1000) to Humanoid health (0-100)
+			local humanoidHealth = (data.health / data.maxHealth) * 100
+			humanoid.Health = math.min(humanoidHealth, 100)
+			print("[PlayerData] 🤖 Synced Humanoid.Health: " .. humanoid.Health .. " / 100")
+		else
+			warn("[PlayerData] ⚠️ No Humanoid found for " .. player.DisplayName)
+		end
+	else
+		warn("[PlayerData] ⚠️ No Character found for " .. player.DisplayName)
 	end
 end
 

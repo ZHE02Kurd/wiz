@@ -15,6 +15,12 @@ print("[⚡ MAIN] ========================================")
 
 -- Services
 local ServerScriptService = game:GetService("ServerScriptService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Initialize RemoteEvents FIRST (must happen before any server scripts try to use them)
+print("[⚡ MAIN] 🔌 Initializing RemoteEvents...")
+local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+print("[⚡ MAIN] ✅ RemoteEvents ready!")
 
 -- Wait for Server folder to load
 local Server = ServerScriptService:WaitForChild("Server")
@@ -25,6 +31,7 @@ print("[⚡ MAIN] 🔧 Loading server modules...")
 local GameManagerServer = require(Server:WaitForChild("GameManagerServer"))
 local CombatServer = require(Server:WaitForChild("CombatServer"))
 local LevelUpServer = require(Server:WaitForChild("LevelUpServer"))
+local DebugCommands = require(Server:WaitForChild("DebugCommands"))
 
 -- Initialize game systems
 GameManagerServer:Initialize()

@@ -17,12 +17,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
 local PlayerDataModule = require(ReplicatedStorage.Shared.Modules.PlayerDataModule)
 local BuffData = require(ReplicatedStorage.Shared.Data.BuffData)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
--- Remotes
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-local LevelUpChoiceSCRemote = Remotes:WaitForChild("LevelUpChoiceSC") -- Server to Client
-local LevelUpChoiceCSRemote = Remotes:WaitForChild("LevelUpChoiceCS") -- Client to Server
-local PlayerLeveledUpSCRemote = Remotes:WaitForChild("PlayerLeveledUpSC") -- Notify client
+-- RemoteEvents
+local LevelUpChoiceSCRemote = Remotes.LevelUpChoiceSC -- Server to Client
+local LevelUpChoiceCSRemote = Remotes.LevelUpChoiceCS -- Client to Server
+local PlayerLeveledUpSCRemote = Remotes.PlayerLeveledUpSC -- Notify all clients
 
 -- ========================================
 -- LEVEL UP HANDLER
@@ -87,7 +87,27 @@ function HandlePlayerLevelUp(player)
 	
 	-- Send choices to client
 	if #choices > 0 then
-		LevelUpChoiceSCRemote:FireClient(player, choices)
+		-- Determine if this is an element choice or buff choice
+		local isElementChoice = (choices[1].type == "Element")
+		
+		-- Extract just the choice names for the UI
+		local choiceNames = {}
+		for _, choice in ipairs(choices) do
+			table.insert(choiceNames, choice.name)
+		end
+		
+		-- Send to client with proper format
+		local choiceData = {
+			level = currentLevel,
+			isElement = isElementChoice,
+			choices = choiceNames
+		}
+		
+		print("[LevelUpServer] 📤 Sending choices to client:", table.concat(choiceNames, ", "))
+		LevelUpChoiceSCRemote:FireClient(player, choiceData)
+		
+		-- Also notify all clients that this player leveled up (for VFX)
+		PlayerLeveledUpSCRemote:FireAllClients(player, currentLevel)
 	else
 		warn("⚠️ No level-up choices for level " .. currentLevel)
 	end
@@ -96,12 +116,11 @@ end
 -- ========================================
 -- CHOICE SELECTION HANDLER
 -- ========================================
-LevelUpChoiceCSRemote.OnServerEvent:Connect(function(player, choice)
+LevelUpChoiceCSRemote.OnServerEvent:Connect(function(player, choiceName)
 	print("[LevelUpServer] 🎯 ========================================")
 	print("[LevelUpServer] 🎯 LEVEL-UP CHOICE RECEIVED")
 	print("[LevelUpServer] 🎯 Player: " .. (player and player.DisplayName or "nil"))
-	print("[LevelUpServer] 🎯 Choice: " .. tostring(choice and choice.name or "nil"))
-	print("[LevelUpServer] 🎯 Choice Type: " .. tostring(choice and choice.type or "nil"))
+	print("[LevelUpServer] 🎯 Choice: " .. tostring(choiceName))
 	print("[LevelUpServer] 🎯 ========================================")
 	
 	-- SECURITY: Validate player
@@ -112,8 +131,8 @@ LevelUpChoiceCSRemote.OnServerEvent:Connect(function(player, choice)
 	print("[LevelUpServer] ✅ Player validation passed")
 	
 	-- SECURITY: Validate choice
-	if not choice or type(choice) ~= "table" then
-		warn("[LevelUpServer] ❌ SECURITY: Invalid choice data type: " .. type(choice))
+	if not choiceName or type(choiceName) ~= "string" then
+		warn("[LevelUpServer] ❌ SECURITY: Invalid choice data type: " .. type(choiceName))
 		return
 	end
 	print("[LevelUpServer] ✅ Choice validation passed")
@@ -132,46 +151,42 @@ LevelUpChoiceCSRemote.OnServerEvent:Connect(function(player, choice)
 	end
 	print("[LevelUpServer] ✅ Player is in match")
 	
+	-- Determine choice type based on player's current level
+	local currentLevel = data.level
+	local isElementChoice = (currentLevel == 2 or currentLevel == 4 or currentLevel == 6)
+	
 	-- Process the choice
-	if choice.type == "Element" then
+	if isElementChoice then
 		print("[LevelUpServer] 🔮 Processing ELEMENT choice...")
-		-- Player chose an element
-		local element = choice.name
 		
 		-- SECURITY: Validate element
-		if element ~= "Fire" and element ~= "Water" and element ~= "Earth" then
-			warn("[LevelUpServer] ❌ SECURITY: Invalid element: " .. tostring(element))
+		if choiceName ~= "Fire" and choiceName ~= "Water" and choiceName ~= "Earth" then
+			warn("[LevelUpServer] ❌ SECURITY: Invalid element: " .. tostring(choiceName))
 			return
 		end
-		print("[LevelUpServer] ✅ Element validation passed: " .. element)
+		print("[LevelUpServer] ✅ Element validation passed: " .. choiceName)
 		
 		-- Add element to player's spell core
-		PlayerDataModule:AddElement(player, element)
+		PlayerDataModule:AddElement(player, choiceName)
 		
 		print("[LevelUpServer] ✅ Element added successfully!")
-		print("[LevelUpServer] ✨ " .. player.DisplayName .. " chose " .. element .. "! New spell: " .. data.currentSpell.name)
-	
-	elseif choice.type == "Buff" then
-		print("[LevelUpServer] 💪 Processing BUFF choice...")
-		-- Player chose a buff
-		local buffName = choice.name
-		
-		-- SECURITY: Validate buff exists
-		if not BuffData[buffName] then
-			warn("[LevelUpServer] ❌ SECURITY: Invalid buff: " .. tostring(buffName))
-			return
-		end
-		print("[LevelUpServer] ✅ Buff validation passed: " .. buffName)
-		
-		-- Add buff to player
-		PlayerDataModule:AddBuff(player, buffName)
-		
-		print("[LevelUpServer] ✅ Buff added successfully!")
-		print("[LevelUpServer] 💪 " .. player.DisplayName .. " chose " .. buffName .. "!")
+		print("[LevelUpServer] ✨ " .. player.DisplayName .. " chose " .. choiceName .. "! New spell: " .. data.currentSpell.name)
 	
 	else
-		warn("[LevelUpServer] ❌ SECURITY: Unknown choice type: " .. tostring(choice.type))
-		return
+		print("[LevelUpServer] 💪 Processing BUFF choice...")
+		
+		-- SECURITY: Validate buff exists
+		if not BuffData[choiceName] then
+			warn("[LevelUpServer] ❌ SECURITY: Invalid buff: " .. tostring(choiceName))
+			return
+		end
+		print("[LevelUpServer] ✅ Buff validation passed: " .. choiceName)
+		
+		-- Add buff to player
+		PlayerDataModule:AddBuff(player, choiceName)
+		
+		print("[LevelUpServer] ✅ Buff added successfully!")
+		print("[LevelUpServer] 💪 " .. player.DisplayName .. " chose " .. choiceName .. "!")
 	end
 	
 	-- Notify client that choice was processed
