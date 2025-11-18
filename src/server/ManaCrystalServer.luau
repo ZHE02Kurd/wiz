@@ -89,26 +89,32 @@ end
 --- @param crystal Part The crystal that was touched
 --- @param player Player The player who touched it
 local function onCrystalTouched(crystal, player)
+	print("[ManaCrystal] 👆 ========================================")
 	print("[ManaCrystal] 👆 Crystal touched by " .. player.DisplayName)
 	
 	-- Check debounce
 	if crystal:GetAttribute("PickupDebounce") then
 		print("[ManaCrystal] ⏱️ Debounce active - ignoring touch")
+		print("[ManaCrystal] ========================================")
 		return
 	end
 	
 	-- Set debounce
 	crystal:SetAttribute("PickupDebounce", true)
 	
-	print("[ManaCrystal] ✅ Pickup valid - giving XP to " .. player.DisplayName)
+	print("[ManaCrystal] ✅ Pickup valid - giving " .. MANA_CRYSTAL_XP .. " XP to " .. player.DisplayName)
 	
 	-- Give XP to the player
 	local leveledUp = PlayerDataModule:AddXP(player, MANA_CRYSTAL_XP)
+	
+	print("[ManaCrystal] 📊 AddXP returned: " .. tostring(leveledUp))
 	
 	if leveledUp then
 		print("[ManaCrystal] ⭐ Player leveled up from this crystal!")
 		-- Trigger level-up UI via LevelUpServer
 		LevelUpServer.HandlePlayerLevelUp(player)
+	else
+		print("[ManaCrystal] ℹ️ No level up yet")
 	end
 	
 	-- Play pickup effect (PLACEHOLDER - add sound/VFX here)
@@ -118,6 +124,7 @@ local function onCrystalTouched(crystal, player)
 	-- Destroy the crystal
 	print("[ManaCrystal] 💨 Destroying crystal")
 	crystal:Destroy()
+	print("[ManaCrystal] ========================================")
 end
 
 --- Sets up touch detection for a crystal
@@ -173,7 +180,13 @@ function ManaCrystalServer:SpawnCrystals(centerPosition, count)
 	end
 	
 	-- Spawn crystals
-	for i = 1, count do
+	local successfulSpawns = 0
+	local attempts = 0
+	local maxAttempts = count * 3 -- Try up to 3x the desired count to handle failed raycasts
+	
+	while successfulSpawns < count and attempts < maxAttempts do
+		attempts = attempts + 1
+		
 		-- Random position within radius
 		local angle = math.random() * math.pi * 2 -- Random angle
 		local distance = math.random(50, SPAWN_RADIUS) -- Random distance (not too close to center)
@@ -181,9 +194,9 @@ function ManaCrystalServer:SpawnCrystals(centerPosition, count)
 		local x = centerPosition.X + math.cos(angle) * distance
 		local z = centerPosition.Z + math.sin(angle) * distance
 		
-		-- Raycast down to find ground level
-		local rayOrigin = Vector3.new(x, centerPosition.Y + 100, z)
-		local rayDirection = Vector3.new(0, -200, 0)
+		-- Raycast down to find ground level (cast from high up, go down far)
+		local rayOrigin = Vector3.new(x, centerPosition.Y + 500, z)
+		local rayDirection = Vector3.new(0, -1000, 0) -- Go down 1000 studs
 		
 		local raycastParams = RaycastParams.new()
 		raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -200,10 +213,17 @@ function ManaCrystalServer:SpawnCrystals(centerPosition, count)
 			-- Setup touch detection
 			setupCrystalTouchDetection(crystal)
 			
-			print("[ManaCrystal] ✅ Crystal " .. i .. "/" .. count .. " spawned at " .. tostring(spawnPosition))
+			successfulSpawns = successfulSpawns + 1
+			print("[ManaCrystal] ✅ Crystal " .. successfulSpawns .. "/" .. count .. " spawned at " .. tostring(spawnPosition))
 		else
-			warn("[ManaCrystal] ⚠️ Failed to find ground for crystal " .. i .. " - skipping")
+			print("[ManaCrystal] ⚠️ Raycast miss at (" .. math.floor(x) .. ", " .. math.floor(z) .. ") - retrying...")
 		end
+	end
+	
+	if successfulSpawns < count then
+		warn("[ManaCrystal] ⚠️ Only spawned " .. successfulSpawns .. " out of " .. count .. " crystals after " .. attempts .. " attempts")
+	else
+		print("[ManaCrystal] ✅ All " .. successfulSpawns .. " crystals spawned successfully!")
 	end
 	
 	print("[ManaCrystal] ✅ Finished spawning " .. count .. " Mana Crystals")

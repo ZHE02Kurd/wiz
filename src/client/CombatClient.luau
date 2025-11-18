@@ -20,10 +20,12 @@ local ContextActionService = game:GetService("ContextActionService")
 
 -- Get local player
 local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- Character references (will be updated on respawn)
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local camera = workspace.CurrentCamera
 
 -- Modules
 local PlayerDataModule = require(ReplicatedStorage.Shared.Modules.PlayerDataModule)
@@ -326,11 +328,35 @@ end, false, Enum.KeyCode.Q, Enum.KeyCode.G)
 camera.CameraType = Enum.CameraType.Scriptable
 
 RunService.RenderStepped:Connect(function()
+	-- Get current character (handles respawns)
+	local currentCharacter = player.Character
+	if not currentCharacter then return end
+	
+	local currentHRP = currentCharacter:FindFirstChild("HumanoidRootPart")
+	if not currentHRP then return end
+	
 	-- Position camera above and behind player at fixed angle
 	local offset = Vector3.new(0, 30, 20) -- 30 studs up, 20 studs back
-	local targetPosition = humanoidRootPart.Position + offset
+	local targetPosition = currentHRP.Position + offset
 	
-	camera.CFrame = CFrame.new(targetPosition, humanoidRootPart.Position)
+	camera.CFrame = CFrame.new(targetPosition, currentHRP.Position)
+end)
+
+-- ========================================
+-- CHARACTER RESPAWN HANDLER
+-- ========================================
+-- Update character references when player respawns
+player.CharacterAdded:Connect(function(newCharacter)
+	print("[CombatClient] 🔄 Character respawned - updating references")
+	character = newCharacter
+	humanoid = character:WaitForChild("Humanoid")
+	humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+	
+	-- Reset camera to follow new character
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.CameraSubject = humanoid
+	
+	print("[CombatClient] ✅ Character references updated - camera should follow")
 end)
 
 print("✅ Combat controls initialized!")

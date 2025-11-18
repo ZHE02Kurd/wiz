@@ -92,6 +92,13 @@ createRemoteEvent("MatchStateChangedSC")
 -- Sends: {eliminated: Player, eliminator: Player?}
 createRemoteEvent("PlayerEliminatedSC")
 
+-- ================================================================
+-- STORM SYSTEM REMOTES
+-- ================================================================
+-- StormUpdateSC: Server → All Clients for storm visuals
+-- Sends: {currentRadius: number, targetRadius: number, center: Vector3, damagePercent: number, phase: number}
+createRemoteEvent("StormUpdateSC")
+
 print("[DEBUG] All RemoteEvents created successfully")
 
 -- ================================================================
@@ -111,6 +118,9 @@ local Remotes = {
 	-- Match
 	MatchStateChangedSC = remotesFolder:WaitForChild("MatchStateChangedSC") :: RemoteEvent,
 	PlayerEliminatedSC = remotesFolder:WaitForChild("PlayerEliminatedSC") :: RemoteEvent,
+	
+	-- Storm
+	StormUpdateSC = remotesFolder:WaitForChild("StormUpdateSC") :: RemoteEvent,
 }
 
 print("[DEBUG] Remotes module ready")

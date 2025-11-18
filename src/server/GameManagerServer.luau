@@ -24,6 +24,7 @@ local PlayerDataModule = require(ReplicatedStorage.Shared.Modules.PlayerDataModu
 -- Server Modules
 local ServerFolder = script.Parent
 local ManaCrystalServer = require(ServerFolder:WaitForChild("ManaCrystalServer"))
+local StormServer = require(ServerFolder:WaitForChild("StormServer"))
 
 -- Remotes
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -287,12 +288,15 @@ function GameManagerServer:StartMatch()
 	ManaCrystalServer:SpawnCrystals(arenaCenter, 50)
 	print("[GameManager] ✅ Mana Crystals spawned")
 	
+	-- Start storm system (runs in background)
+	print("[GameManager] 🌪️ Starting Storm System...")
+	task.spawn(function()
+		StormServer:StartStorm()
+	end)
+	
 	print("[GameManager] 🎮 =========================================")
 	print("[GameManager] 🎮 MATCH STARTED SUCCESSFULLY!")
 	print("[GameManager] 🎮 =========================================")
-	
-	-- TODO: Start storm system
-	-- TODO: Spawn chests and health orbs
 end
 
 --- Ends the current match
@@ -303,6 +307,7 @@ function GameManagerServer:EndMatch()
 	
 	-- Clean up match environment
 	print("[GameManager] 🧹 Cleaning up match environment...")
+	StormServer:StopStorm()
 	ManaCrystalServer:ClearCrystals()
 	print("[GameManager] ✅ Match cleanup complete")
 	

@@ -29,6 +29,7 @@ local QueuePlayerRemote = Remotes:WaitForChild("QueuePlayerCS")
 -- With init.client.luau structure, sibling files become children of this script
 local combatClientModule = script:FindFirstChild("CombatClient")
 local levelUpClientModule = script:FindFirstChild("LevelUpClient")
+local stormClientModule = script:FindFirstChild("UI") and script.UI:FindFirstChild("StormClient")
 
 if combatClientModule then
 	require(combatClientModule)
@@ -47,6 +48,13 @@ if levelUpClientModule then
 	print("[🎨 CLIENT] ⭐ LevelUpClient loaded!")
 else
 	warn("[🎨 CLIENT] ⚠️ LevelUpClient not found! Level-up UI will not work.")
+end
+
+if stormClientModule then
+	require(stormClientModule)
+	print("[🎨 CLIENT] 🌪️ StormClient loaded!")
+else
+	warn("[🎨 CLIENT] ⚠️ StormClient not found! Storm visuals will not work.")
 end
 
 print("[🎨 CLIENT] 👤 Player:", player.Name)

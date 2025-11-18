@@ -108,6 +108,35 @@ local function commandLevelUp(player: Player)
 end
 
 -- ================================================================
+-- COMMAND: /stats
+-- ================================================================
+-- Shows current player stats (HP, XP, Level, Spell)
+local function commandStats(player: Player)
+	print("[DebugCmd] 🎯 /stats command from", player.Name)
+	
+	if not isAllowed(player) then
+		warn("[DebugCmd] ❌", player.Name, "not allowed to use commands")
+		return
+	end
+	
+	local data = PlayerDataModule:GetPlayerData(player)
+	if not data then
+		warn("[DebugCmd] ❌ No player data found for", player.Name)
+		return
+	end
+	
+	print("[DebugCmd] 📊 ========================================")
+	print("[DebugCmd] 📊 STATS FOR", player.Name)
+	print("[DebugCmd] 📊 Level:", data.level)
+	print("[DebugCmd] 📊 XP:", data.xp)
+	print("[DebugCmd] 📊 Health:", data.health, "/", data.maxHealth)
+	print("[DebugCmd] 📊 Spell:", data.currentSpell.name)
+	print("[DebugCmd] 📊 SpellCore:", table.concat(data.spellCore, ", "))
+	print("[DebugCmd] 📊 InMatch:", data.isInMatch)
+	print("[DebugCmd] 📊 ========================================")
+end
+
+-- ================================================================
 -- COMMAND: /reset
 -- ================================================================
 -- Resets player's level and XP back to 1
@@ -150,6 +179,10 @@ Players.PlayerAdded:Connect(function(player)
 		elseif lowerMessage == "/levelup" then
 			commandLevelUp(player)
 		
+		-- /stats
+		elseif lowerMessage == "/stats" then
+			commandStats(player)
+		
 		-- /reset
 		elseif lowerMessage == "/reset" then
 			commandReset(player)
@@ -161,6 +194,7 @@ print("[DEBUG] DebugCommands ready!")
 print("[DEBUG] Available commands:")
 print("[DEBUG]   /xp <amount> - Give XP")
 print("[DEBUG]   /levelup - Level up instantly")
+print("[DEBUG]   /stats - Show your current stats")
 print("[DEBUG]   /reset - Reset to level 1")
 
 return {}
