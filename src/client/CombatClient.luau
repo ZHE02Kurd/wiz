@@ -28,8 +28,8 @@ local camera = workspace.CurrentCamera
 -- Modules
 local PlayerDataModule = require(ReplicatedStorage.Shared.Modules.PlayerDataModule)
 
--- Remotes
-local Remotes = ReplicatedStorage.Shared:WaitForChild("Remotes")
+-- Remotes (located in ReplicatedStorage.Remotes, not Shared.Remotes)
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local CastSpellRemote = Remotes:WaitForChild("CastSpellCS")
 local UseAbilityRemote = Remotes:WaitForChild("UseAbilityCS")
 
@@ -315,3 +315,6 @@ RunService.RenderStepped:Connect(function()
 end)
 
 print("✅ Combat controls initialized!")
+
+-- Return empty table (this is an initializer script)
+return {}

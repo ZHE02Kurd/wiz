@@ -149,3 +149,6 @@ UseAbilityRemote.OnServerEvent:Connect(function(player)
 end)
 
 print("✅ CombatServer initialized!")
+
+-- Return empty module (this is just an initializer script)
+return {}

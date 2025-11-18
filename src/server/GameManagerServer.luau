@@ -526,6 +526,10 @@ Players.PlayerAdded:Connect(function(player)
 		-- Spawn in lobby
 		GameManagerServer:SpawnPlayerInLobby(player)
 		
+		-- Auto-add to queue (for testing - later this should be a button click)
+		task.wait(1) -- Wait for character to fully load
+		GameManagerServer:AddPlayerToQueue(player)
+		
 		-- Listen for death
 		local humanoid = character:WaitForChild("Humanoid")
 		humanoid.Died:Connect(function()
