@@ -128,7 +128,7 @@ function PlayerDataModule:CreatePlayerData(player)
 	print("  - Health: " .. data.health .. " / " .. data.maxHealth)
 	print("  - Level: " .. data.level .. " | XP: " .. data.xp)
 	print("  - SpellCore: " .. (#data.spellCore > 0 and table.concat(data.spellCore, ", ") or "(empty)"))
-	print("  - CurrentSpell: " .. data.currentSpell)
+	print("  - CurrentSpell: " .. data.currentSpell.name)
 	print("  - Movement Speed: " .. data.movementSpeed)
 end
 
@@ -233,8 +233,8 @@ function PlayerDataModule:AddElement(player, element)
 	-- Update their spell
 	local oldSpell = data.currentSpell
 	self:UpdateSpell(player)
-	print("[PlayerData] ✨ Spell evolved: " .. oldSpell .. " → " .. data.currentSpell)
-	print("[PlayerData] 📊 New spell stats - Damage: " .. SpellData.Spells[data.currentSpell].damage .. " | Cooldown: " .. SpellData.Spells[data.currentSpell].cooldown .. "s")
+	print("[PlayerData] ✨ Spell evolved: " .. oldSpell.name .. " → " .. data.currentSpell.name)
+	print("[PlayerData] 📊 New spell stats - Damage: " .. data.currentSpell.damage .. " | Cooldown: " .. data.currentSpell.cooldown .. "s")
 end
 
 --- Adds a buff to a player
@@ -423,7 +423,7 @@ function PlayerDataModule:ResetMatchData(player)
 	print("[PlayerData] 📊 After reset:")
 	print("  - Health: " .. data.health .. " / " .. data.maxHealth)
 	print("  - Level: " .. data.level)
-	print("  - Spell: " .. data.currentSpell)
+	print("  - Spell: " .. data.currentSpell.name)
 end
 
 return PlayerDataModule
